@@ -1,0 +1,25 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /zkStudy
+
+spring:
+  application:
+    name: zkStudy
+  profiles:
+      active: develop
+
+
+
+  #重试次数
+curator:
+  retryCount: 5
+  #重试间隔时间
+  elapsedTimeMs: 5000
+  # zookeeper 地址
+  connectString: 192.168.4.40:2181
+  # session超时时间
+  sessionTimeoutMs: 60000
+  # 连接超时时间
+  connectionTimeoutMs: 5000
+
