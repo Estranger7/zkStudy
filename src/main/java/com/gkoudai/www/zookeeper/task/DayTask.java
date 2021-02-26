@@ -24,7 +24,7 @@ public class DayTask {
         this.clusterNodeProcess = clusterNodeProcess;
     }
 
-    @Scheduled(cron = "0 49 20 * * ?")
+    @Scheduled(cron = "0 05 10 * * ?")
     public void testTask(){
         if(clusterNodeProcess.isMaster()){
             logger.info("只有我能执行");

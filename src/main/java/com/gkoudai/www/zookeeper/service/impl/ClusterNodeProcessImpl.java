@@ -35,7 +35,7 @@ public class ClusterNodeProcessImpl implements ClusterNodeProcess {
 
     private String currentNodePath;
 
-    List<String> currentNodeList = new ArrayList<>();
+    List<String> currentNodeList;
 
     private final CuratorFramework curatorFramework;
 
@@ -61,9 +61,6 @@ public class ClusterNodeProcessImpl implements ClusterNodeProcess {
                 logger.info("ZooKeeper集群根节点创建成功 path:{}", ZOO_KEEPER_ROOT_URL);
             }
 
-            //监听方法
-            watchNode();
-
             // 创建一个短命、带有自增长序列的节点
             currentNodePath = curatorFramework
                     .create()
@@ -73,8 +70,8 @@ public class ClusterNodeProcessImpl implements ClusterNodeProcess {
                     .forPath(ZOO_KEEPER_ROOT_URL + "/" + ZOO_KEEPER_SERVER_NODE_NAME_PREFIX);
             logger.info("ZooKeeper集群节点创建成功 path:{}", currentNodePath);
 
-            //将当前节点加入
-//            currentNodeList.add(currentNodePath);
+            //监听方法
+            watchNode();
 
 
         } catch (Exception e) {
@@ -84,7 +81,7 @@ public class ClusterNodeProcessImpl implements ClusterNodeProcess {
 
     @Override
     public boolean isMaster() {
-        if(currentNodePath == null || CollectionUtils.isEmpty(currentNodeList)){
+        if (currentNodePath == null || CollectionUtils.isEmpty(currentNodeList)) {
             return true;
         }
         //判断当前节点是否是最小的(最早创建的)
@@ -93,18 +90,26 @@ public class ClusterNodeProcessImpl implements ClusterNodeProcess {
 
     private void watchNode() {
         try {
+            List<String> newCurrentList = new ArrayList<>();
             //创建监听事件
-            curatorFramework.getChildren()
-                    .usingWatcher((Watcher) watchedEvent -> {
-                        if (Objects.equals(watchedEvent.getType(), Watcher.Event.EventType.NodeChildrenChanged)) {//watcher监听的数据节点的子节点列表发生变更（通过create、delete触发）
-                            logger.info("监听到节点事件：" + JSON.toJSONString(watchedEvent));
-                            watchNode();
-                        }
-                    }).forPath(ZOO_KEEPER_ROOT_URL);
+            List<String> childrenList =
+                    curatorFramework.getChildren()
+                            .usingWatcher((Watcher) watchedEvent -> {
+                                if (Objects.equals(watchedEvent.getType(), Watcher.Event.EventType.NodeChildrenChanged)) {//watcher监听的数据节点的子节点列表发生变更（通过create、delete触发）
+                                    logger.info("监听到节点事件：" + JSON.toJSONString(watchedEvent));
+                                    //重新设置监听事件
+                                    watchNode();
+                                }
+                            }).forPath(ZOO_KEEPER_ROOT_URL);
 
-            currentNodeList.add();
+            if(!CollectionUtils.isEmpty(childrenList)) {
+                for (String child :
+                        childrenList) {
+                    newCurrentList.add(ZOO_KEEPER_ROOT_URL + "/" + child);
+                }
+            }
             //server0000000456，将server截取，取后面的数字从小到大对注册上zookeeper的应用服务器节点进行排序
-            currentNodeList = currentNodeList.stream().sorted(Comparator.comparing(s -> s.substring(ZOO_KEEPER_SERVER_NODE_NAME_PREFIX.length()))).collect(Collectors.toList());
+            currentNodeList = newCurrentList.stream().sorted(Comparator.comparing(s -> s.substring(ZOO_KEEPER_SERVER_NODE_NAME_PREFIX.length()))).collect(Collectors.toList());
             if (logger.isInfoEnabled()) {
                 logger.info("集群节点信息刷新 最新节点信息:{}", currentNodeList);
             }
