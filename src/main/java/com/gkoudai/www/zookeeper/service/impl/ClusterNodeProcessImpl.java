@@ -3,8 +3,10 @@ package com.gkoudai.www.zookeeper.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.gkoudai.www.zookeeper.service.ClusterNodeProcess;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
@@ -12,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -101,6 +102,18 @@ public class ClusterNodeProcessImpl implements ClusterNodeProcess {
                                     watchNode();
                                 }
                             }).forPath(ZOO_KEEPER_ROOT_URL);
+
+
+//            //通过cache创建监听
+//            PathChildrenCache cache = new PathChildrenCache(curatorFramework, ZOO_KEEPER_ROOT_URL, true);
+//            //调用start方法开始监听 ，设置启动模式为同步加载节点数据
+//            cache.start(PathChildrenCache.StartMode.POST_INITIALIZED_EVENT);
+//            cache.getListenable().addListener(new PathChildrenCacheListener() {
+//                @Override
+//                public void childEvent(CuratorFramework curatorFramework, PathChildrenCacheEvent pathChildrenCacheEvent) throws Exception {
+//                    logger.info("监听到节点事件：" + JSON.toJSONString(pathChildrenCacheEvent));
+//                }
+//            });
 
             if(!CollectionUtils.isEmpty(childrenList)) {
                 for (String child :
